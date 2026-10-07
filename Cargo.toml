@@ -1,0 +1,44 @@
+[package]
+name = "reevun"
+# Set by the release workflow (1.0.<run number>).
+version = "1.0.0"
+edition = "2024"
+description = "Reevun for Linux"
+authors = ["Reevun Software LLC <support@reevun.app>"]
+homepage = "https://reevun.app"
+license = "LicenseRef-Proprietary"
+publish = false
+
+[dependencies]
+async-channel = "2.5.0"
+base64 = "0.23.1"
+getrandom = "0.4.3"
+gtk = { version = "0.11.5", package = "gtk4", features = ["v4_14"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+url = "2.5.8"
+webkit6 = { version = "0.6.1", features = ["v2_44"] }
+
+[profile.release]
+lto = true
+strip = true
+
+# The packages the release workflow builds (cargo-deb, cargo-generate-rpm).
+[package.metadata.deb]
+name = "reevun"
+maintainer = "Reevun Software LLC <support@reevun.app>"
+section = "net"
+depends = "$auto"
+assets = [
+    ["target/release/reevun", "usr/bin/", "755"],
+    ["packaging/app.reevun.desktop.desktop", "usr/share/applications/", "644"],
+    ["packaging/icon.png", "usr/share/icons/hicolor/512x512/apps/app.reevun.desktop.png", "644"],
+]
+
+[package.metadata.generate-rpm]
+name = "reevun"
+assets = [
+    { source = "target/release/reevun", dest = "/usr/bin/reevun", mode = "755" },
+    { source = "packaging/app.reevun.desktop.desktop", dest = "/usr/share/applications/app.reevun.desktop.desktop", mode = "644" },
+    { source = "packaging/icon.png", dest = "/usr/share/icons/hicolor/512x512/apps/app.reevun.desktop.png", mode = "644" },
+]

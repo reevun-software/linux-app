@@ -1,8 +1,8 @@
 name: Release
 
-# Builds the Linux packages and publishes them as a GitHub release, which installed apps pick up as an update.
-# Runs on every change here and on every change to app-core (app-core sends
-# "core-updated").
+# Builds Reevun for Linux (.deb and .rpm) and publishes it as a GitHub
+# release, which installed apps pick up as an update. Runs on every change
+# here and on every change to app-core (app-core sends "core-updated").
 on:
   push:
     branches: [main]
@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       VERSION: 1.0.${{ github.run_number }}
     steps:
@@ -34,20 +34,37 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      # The app's own screens, one self-contained page built into the app.
+      - name: Screens
+        run: |
+          npm --prefix app-core ci
+          npm --prefix app-core run build
+          mkdir -p linux-app/screens
+          cp app-core/dist/index.html linux-app/screens/
+      - name: System libraries
+        run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb,cargo-generate-rpm
       - name: Version
         working-directory: linux-app
-        run: npm version "${{ env.VERSION }}" --no-git-tag-version
-      - name: Install
+        run: sed -i "0,/^version = .*/s//version = \"${VERSION}\"/" Cargo.toml
+      - name: Test
         working-directory: linux-app
-        run: npm ci
+        run: cargo test --locked
       - name: Build
         working-directory: linux-app
-        run: npm run dist
-      # Always Reevun.AppImage and Reevun.deb, so .../releases/latest/download/<name> is a permanent download link; latest-linux.yml is what installed apps read for updates.
+        run: |
+          cargo build --release --locked
+          mkdir -p release
+          cargo deb --no-build -o release/Reevun.deb
+          cargo generate-rpm -o release/Reevun.rpm
+      # Always Reevun.deb and Reevun.rpm, so .../releases/latest/download/<name>
+      # is a permanent download link.
       - name: Publish
         working-directory: linux-app
         env:
           GH_TOKEN: ${{ github.token }}
         run: >
           gh release create "v${{ env.VERSION }}" --title "Reevun ${{ env.VERSION }}" --notes "" --latest
-          release/Reevun.AppImage release/Reevun.deb release/latest-linux.yml
+          release/Reevun.deb release/Reevun.rpm

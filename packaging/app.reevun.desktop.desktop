@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Reevun
+Comment=Your Discord servers: applications, ranks, warnings and tickets
+Comment[ru]=Ваши серверы Discord: заявки, ранги, варны и обращения
+Exec=reevun
+Icon=app.reevun.desktop
+Categories=Network;Chat;
+StartupNotify=true
+StartupWMClass=app.reevun.desktop
