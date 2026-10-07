@@ -70,6 +70,23 @@ pub fn view(page: &str, handle: impl Fn(&WebView, &Message) -> Option<Value> + '
             send(&view, json!({ "id": id, "result": result }));
         }
     });
+    // The screens never go anywhere else (the messages above are theirs
+    // alone).
+    view.connect_decide_policy(|_, decision, kind| {
+        if kind == webkit6::PolicyDecisionType::Response {
+            return false;
+        }
+        let url = decision
+            .downcast_ref::<webkit6::NavigationPolicyDecision>()
+            .and_then(|navigation| navigation.navigation_action())
+            .and_then(|action| action.request())
+            .and_then(|request| request.uri());
+        if url.is_some_and(|url| url.starts_with(&format!("{SCHEME}://screens/"))) {
+            return false;
+        }
+        decision.ignore();
+        true
+    });
     view.load_uri(&format!("{SCHEME}://screens/#{page}"));
     view
 }
