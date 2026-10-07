@@ -48,14 +48,15 @@ jobs:
           tool: cargo-deb,cargo-generate-rpm
       - name: Version
         working-directory: linux-app
+        # The lock file keeps every dependency as it is; only this version moves.
         run: sed -i "0,/^version = .*/s//version = \"${VERSION}\"/" Cargo.toml
       - name: Test
         working-directory: linux-app
-        run: cargo test --locked
+        run: cargo test
       - name: Build
         working-directory: linux-app
         run: |
-          cargo build --release --locked
+          cargo build --release
           mkdir -p release
           cargo deb --no-build -o release/Reevun.deb
           cargo generate-rpm -o release/Reevun.rpm
