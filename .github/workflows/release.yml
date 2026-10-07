@@ -1,0 +1,53 @@
+name: Release
+
+# Builds the Linux packages and publishes them as a GitHub release, which installed apps pick up as an update.
+# Runs on every change here and on every change to app-core (app-core sends
+# "core-updated").
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [core-updated]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 1.0.${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: linux-app
+      - uses: actions/checkout@v5
+        with:
+          repository: reevun-software/app-core
+          token: ${{ secrets.DESKTOP_CI_TOKEN }}
+          path: app-core
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Version
+        working-directory: linux-app
+        run: npm version "${{ env.VERSION }}" --no-git-tag-version
+      - name: Install
+        working-directory: linux-app
+        run: npm ci
+      - name: Build
+        working-directory: linux-app
+        run: npm run dist
+      # Always Reevun.AppImage and Reevun.deb, so .../releases/latest/download/<name> is a permanent download link; latest-linux.yml is what installed apps read for updates.
+      - name: Publish
+        working-directory: linux-app
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "v${{ env.VERSION }}" --title "Reevun ${{ env.VERSION }}" --notes "" --latest
+          release/Reevun.AppImage release/Reevun.deb release/latest-linux.yml

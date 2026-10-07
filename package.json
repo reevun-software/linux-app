@@ -1,0 +1,78 @@
+{
+  "name": "reevun-linux",
+  "productName": "Reevun",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "description": "Reevun for Linux",
+  "author": "Reevun Software LLC",
+  "main": "dist/main.js",
+  "desktopName": "reevun.desktop",
+  "scripts": {
+    "core": "npm --prefix ../app-core ci && npm --prefix ../app-core run build && node -e \"require('fs').cpSync('../app-core/dist','dist/core',{recursive:true})\"",
+    "build": "npm run core && tsc",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --linux --publish never"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2"
+  },
+  "overrides": {
+    "http-cache-semantics": "^4.3.0"
+  },
+  "build": {
+    "appId": "app.reevun.desktop",
+    "productName": "Reevun",
+    "copyright": "© Reevun Software LLC",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Network",
+      "maintainer": "Reevun Software LLC <support@reevun.app>",
+      "synopsis": "Reevun",
+      "syncDesktopName": true,
+      "executableName": "reevun"
+    },
+    "appImage": {
+      "artifactName": "Reevun.${ext}"
+    },
+    "deb": {
+      "artifactName": "Reevun.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "reevun-software",
+        "repo": "linux-app",
+        "releaseType": "release"
+      }
+    ]
+  }
+}
