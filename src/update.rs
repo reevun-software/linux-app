@@ -1,9 +1,13 @@
 use std::cell::RefCell;
+use std::fs::OpenOptions;
+use std::io::Write;
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::rc::Rc;
 use std::time::Duration;
 
+use base64::Engine;
 use gtk::prelude::*;
 use serde::Deserialize;
 use serde_json::json;
@@ -174,9 +178,22 @@ async fn update(
     if checksum.string().as_deref() != Some(expected) {
         return Err("checksum".into());
     }
-    let file: PathBuf = glib::user_cache_dir().join("reevun").join(package.asset());
-    std::fs::create_dir_all(file.parent().ok_or("cache")?)?;
-    std::fs::write(&file, &data)?;
+    let directory = glib::user_cache_dir().join("reevun");
+    std::fs::create_dir_all(&directory)?;
+    let mut suffix = [0u8; 16];
+    getrandom::fill(&mut suffix).map_err(|_| "secure random source")?;
+    let file: PathBuf = directory.join(format!(
+        "{}-{}.download",
+        package.asset(),
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(suffix)
+    ));
+    let mut output = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&file)?;
+    output.write_all(&data)?;
+    output.sync_all()?;
 
     report(json!({ "phase": "installing" }));
     let mut install = package.install(&file);

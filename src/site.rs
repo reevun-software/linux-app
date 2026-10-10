@@ -4,7 +4,7 @@ use gtk::prelude::*;
 use url::Url;
 use webkit6::prelude::*;
 use webkit6::{
-    LoadEvent, NavigationPolicyDecision, NavigationType, PolicyDecisionType, WebView, gio,
+    gio, LoadEvent, NavigationPolicyDecision, NavigationType, PolicyDecisionType, WebView,
 };
 
 // The site, marked as the app in its user agent (it then opens on the
@@ -22,6 +22,13 @@ pub fn site_url() -> String {
 pub fn id_url() -> String {
     std::env::var("REEVUN_ID_URL")
         .unwrap_or_else(|_| "https://id.reevun.app".into())
+        .trim_end_matches('/')
+        .into()
+}
+
+pub fn api_url() -> String {
+    std::env::var("REEVUN_API_URL")
+        .unwrap_or_else(|_| "https://api.reevun.app".into())
         .trim_end_matches('/')
         .into()
 }
